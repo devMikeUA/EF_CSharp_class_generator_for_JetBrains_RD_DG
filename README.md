@@ -1,0 +1,1 @@
+# EF-C-class-generator-for-JetBrains-RD-DG
