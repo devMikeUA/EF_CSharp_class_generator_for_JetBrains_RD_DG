@@ -15,6 +15,7 @@ import javax.swing.*
 
 typeMapping = [
         (~/(?i)tinyint/)                     : "bool",
+        (~/(?i)int\(\d+\)\sunsigned/)        : "uint",
         (~/(?i)int/)                         : "int",
         (~/(?i)decimal/)                     : "decimal",
         (~/(?i)double|real/)                 : "double",
