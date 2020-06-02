@@ -50,7 +50,7 @@ String generateString(List columnList) {
     for (int i = 0; i < listSize; i++) {
         Object column = columnList.getAt(i)
 
-        if (column.HasComment) {
+        if (column.HasComment && column.Comment != null) {
             stringBuffer.append("/// <summary>")
             stringBuffer.append("\n")
             stringBuffer.append("/// ${column.Comment}")
@@ -63,7 +63,10 @@ String generateString(List columnList) {
             stringBuffer.append("\n")
         }
 
-        stringBuffer.append("public ${column.TypeString}${if(!column.IsNotNull) "?" else ""} ${fixName(column.Name, true)} { get; set; }")
+        stringBuffer.append("public ${column.TypeString}")
+        stringBuffer.append("${if (!column.IsNotNull && column.TypeString != "string") "?" else ""}")
+        stringBuffer.append(" ")
+        stringBuffer.append("${fixName(column.Name, true)} { get; set; }")
 
         if (i < listSize - 1) {
             stringBuffer.append("\n\n")
@@ -77,11 +80,11 @@ List calcFields(DasObject table) {
     List list = DasUtil.getColumns(table).reduce([]) { fields, col ->
         String spec = Case.LOWER.apply(col.getDataType().getSpecification())
         Boolean isNotNull = col.isNotNull()
-        def typeStr = typeMapping.find { p, t -> p.matcher(spec).find() }.value
+        def typeStr = typeMapping.find { p, t -> p.matcher(spec).find() }?.value
 
         fields += new Object() {
             String Name = fixName(col.getName(), false)
-            String TypeString = typeStr.toString()
+            String TypeString = typeStr.toString().trim()
             Boolean IsPrimary = DasUtil.isPrimary(col)
             Boolean IsNotNull = isNotNull
             String Comment = col.getComment()
