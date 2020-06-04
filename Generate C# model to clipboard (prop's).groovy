@@ -1,3 +1,4 @@
+import com.intellij.database.model.DasColumn
 import com.intellij.database.model.DasObject
 import com.intellij.database.model.DasTable
 import com.intellij.database.util.Case
@@ -36,13 +37,13 @@ void generate(DasObject table) {
     setToClipboard(string)
 }
 
-void setToClipboard(String str) {
+static void setToClipboard(String str) {
     StringSelection stringSelection = new StringSelection(str)
-    Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+    Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard()
     clipboard.setContents(stringSelection, null)
 }
 
-String generateString(List columnList) {
+static String generateString(List columnList) {
     StringBuffer stringBuffer = new StringBuffer()
 
     int listSize = columnList.size()
@@ -63,6 +64,9 @@ String generateString(List columnList) {
             stringBuffer.append("\n")
         }
 
+        stringBuffer.append("[Column(\"${column.RawName}\", TypeName = \"${column.RawTypeString}\")]")
+        stringBuffer.append("\n")
+
         stringBuffer.append("public ${column.TypeString}")
         stringBuffer.append("${if (!column.IsNotNull && column.TypeString != "string") "?" else ""}")
         stringBuffer.append(" ")
@@ -80,23 +84,29 @@ List calcFields(DasObject table) {
     List list = DasUtil.getColumns(table).reduce([]) { fields, col ->
         String spec = Case.LOWER.apply(col.getDataType().getSpecification())
         Boolean isNotNull = col.isNotNull()
-        def typeStringTmp = typeMapping.find { p, t -> p.matcher(spec).find() }?.value
-        String typeString = typeStringTmp.toString().trim() == "null" ? "object" : typeStringTmp.toString().trim()
+        def typeStr = typeMapping.find { p, t -> p.matcher(spec).find() }.value
 
         fields += new Object() {
             String Name = fixName(col.getName(), false)
-            String TypeString = typeString
+            String RawName = col.getName()
+            String TypeString = typeStr.toString()
+            String RawTypeString = getColTypeAsString(col)
             Boolean IsPrimary = DasUtil.isPrimary(col)
             Boolean IsNotNull = isNotNull
             String Comment = col.getComment()
-            Boolean HasComment = (Comment != "" && Comment != null)
+            Boolean HasComment = Comment != ""
         }
     }
 
     return list
 }
 
-String fixName(String inputString, Boolean capitalize) {
+static String getColTypeAsString(DasColumn column){
+    String colTypeString = column.getDataType().getSpecification().replace("unsigned", " ").trim()
+    return colTypeString
+}
+
+static String fixName(String inputString, Boolean capitalize) {
     String tmpString = NameUtil.splitNameIntoWords(inputString)
             .collect { Case.LOWER.apply(it).capitalize() }
             .join("")
